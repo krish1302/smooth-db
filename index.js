@@ -9,16 +9,39 @@ const conn = db.createConnection({
     port: process.env.DB_PORT
 })
 
-const connection = callback => {
-    conn.connect(err=>{
-        return err ? callback(err) : callback("database connected")
-    })
-}
+const responseCodes = {
+    SELECT: 200,
+    INSERT: 201,
+    UPDATE: 200,
+    DELETE: 200
+};
 
-const act = (sql, data, callback) => {
-    conn.query(sql, data, (err, result) => {
-        return err ? callback(err) : callback(result)
-    })
-}
+const message = {
+    UPDATE: 'Updated successfully',
+    DELETE: 'Deleted successfully'
+};
 
-module.exports = {connection, act}
+const connection = res => {
+    conn.connect(err => {
+        err ? res.status(500).send(err) : res.status(200).send("database connected");
+    });
+};
+
+const act = (query, data, res, callback) => {
+    conn.query(query, data, (err, result) => {
+        // Extract the first word from the query and convert it to uppercase to get the SQL type
+        const sqlType = query.trim().split(' ')[0].toUpperCase();
+        if (err) {
+            return res.status(500).send(err);
+        }
+        let code = responseCodes[sqlType] || 400;
+        let body = message[sqlType] || result;
+        if (callback && typeof callback === 'function') {
+            callback(body);
+        } else {
+            res.status(code).send(body);
+        }
+    })
+};
+
+module.exports = { connection, act }
