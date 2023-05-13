@@ -1,168 +1,152 @@
-# Smooth DB
+# smooth-db
 
-Smooth DB is a Node.js module that provides a simple interface for connecting to and querying a MySQL database using the mysql2 module and the Express framework. With Smooth DB, you can easily create and execute SELECT, INSERT, UPDATE, and DELETE queries from your Node.js application, and handle the results with ease.
+`smooth-db` is a Node.js module that provides a simple interface for connecting to and querying a MySQL database using the mysql2 module and the Express framework. With Smooth DB, you can easily create and execute SELECT, INSERT, UPDATE, and DELETE queries from your Node.js application, and handle the results with ease.
 
 ## Installation
 
-To install Smooth DB, simply run the following command in your Node.js project:
+You can install the `smooth-db` module using npm:
 
 ```
 npm install smooth-db
 ```
 
-##  setup
+## setup
 
 create .env file and paste the Database configuration inside your project directory
 
 ```
-# Database configuration
-DB_HOST=localhost 
-DB_USER=root 
-DB_PASSWORD=root 
-DB_NAME=demo_db 
-DB_PORT=3306 
+// Define the database connection details as environment variables
+process.env.DB_HOST = 'localhost';
+process.env.DB_USER = 'root';
+process.env.DB_PASSWORD = 'password';
+process.env.DB_NAME = 'my_database';
+process.env.DB_PORT = 3306;
 ```
 
 ## Usage
 
-To use Smooth DB in your Node.js application, follow these steps:
+- Here's an example of how to use the `smooth-db` module in an Express.js application without callback:
 
-- Import the module into your code:
-
-```
-const smoothdb = require('smooth-db');
-```
-
-- smooth-db exports two functions: connection and act.
-
-### connection(res)
-The connection function establishes a connection to a MySQL database using environment variables defined in a .env file. It takes an HTTP response object as its only parameter. If an error occurs during the connection process, it sends a 500 HTTP status code and the error message to the client. If the connection is successful, it sends a 200 HTTP status code and the message "database connected" to the client.
-
-- Example usage:
-
-```
-app.get('/connect', (req, res) => {
-  smoothdb.connection(res);
-});
-```
-
-### act(query, data, res, callback)
-
-The `act` function takes four parameters: a SQL query string, an array of values to be inserted into the query, an HTTP response object, and an optional callback function. It executes the SQL query using the `connection` object established in the connection function, and sends the results or an error message to the client depending on the outcome of the query.
-
-
-If the query is successful, the `act` function extracts the first word from the query string and converts it to uppercase to determine the type of SQL query (e.g. SELECT, INSERT, UPDATE, DELETE). It then sends an HTTP status code and a response body to the client depending on the SQL query type and the contents of the `responseCodes` and `message` objects defined at the top of the file.
-
-If the `callback` parameter is provided and is a function, the act function calls the callback function with the response body instead of sending it directly to the client. This allows for more flexibility in how the response is handled.
-
-### Example express application with callback parameter
-
-```
+```javascript
 const express = require('express');
-const smoothdb = require('smooth-db');
-
 const app = express();
-app.use(express.json())
+app.use(expres.json());
+const smoothDb = require('smooth-db');
 
-// Establish database connection
-app.get('/connect', (req, res) => {
-  smoothdb.connection(res);
+
+
+// Establish a database connection
+smoothDb.connection((err) => {
+    if (err) {
+        console.error('Failed to connect to database:', err);
+    } else {
+        console.log('Database connection established');
+    }
 });
 
-// Retrieve all records
-app.get('/items', (req, res) => {
-  const query = 'SELECT * FROM items';
-  smoothdb.act(query, [], res);
+// Define routes for performing CRUD operations on a "users" table
+app.get('/users', (req, res) => {
+    smoothDb.find('users', res);
 });
 
-// Retrieve a single record by ID
-app.get('/items/:id', (req, res) => {
-  const query = 'SELECT * FROM items WHERE id = ?';
-  const data = [req.params.id];
-  smoothdb.act(query, data, res);
+app.get('/users/:id', (req, res) => {
+    smoothDb.findOne('users', req.params.id, res);
 });
 
-// Create a new record
-app.post('/items', (req, res) => {
-  const query = 'INSERT INTO items (name, description) VALUES (?, ?)';
-  const data = [req.body.name, req.body.description];
-  smoothdb.act(query, data, res, (result) => {
-    res.status(201).json({ message: 'Item created successfully', item: result });
-  });
+app.post('/users', (req, res) => {
+    const user = { name: req.body.name, email: req.body.email };
+    smoothDb.insertOne('users', user, res);
 });
 
-// Update an existing record
-app.put('/items/:id', (req, res) => {
-  const query = 'UPDATE items SET name = ?, description = ? WHERE id = ?';
-  const data = [req.body.name, req.body.description, req.params.id];
-  smoothdb.act(query, data, res, () => {
-    res.status(200).json({ message: 'Item updated successfully' });
-  });
+app.put('/users/:id', (req, res) => {
+    const user = { name: req.body.name, email: req.body.email };
+    smoothDb.updateOne('users', req.params.id, user, res);
 });
 
-// Delete a record
-app.delete('/items/:id', (req, res) => {
-  const query = 'DELETE FROM items WHERE id = ?';
-  const data = [req.params.id];
-  smoothdb.act(query, data, res, () => {
-    res.status(200).json({ message: 'Item deleted successfully' });
-  });
+app.delete('/users/:id', (req, res) => {
+    smoothDb.deleteOne('users', req.params.id, res);
 });
 
+// Start the server
 app.listen(3000, () => {
-  console.log('Server started on port 3000');
+    console.log('Server started on port 3000');
 });
 ```
 
-### Example for express application without callback
+- Here's an example of how to use the `smooth-db` module in an Express.js application with callback:
 
-```
+```javascript
 const express = require('express');
-const smoothdb = require('smooth-db');
-
 const app = express();
-app.use(express.json())
+app.use(expres.json());
+const smoothDb = require('smooth-db');
 
-// Establish database connection
-app.get('/connect', (req, res) => {
-  smoothdb.connection(res);
+// connect to database
+smoothDb.connection((err) => {
+  if (err) {
+    console.error('Unable to connect to database:', err);
+    process.exit(1);
+  } else {
+    console.log('Connected to database');
+  }
 });
 
-// Retrieve all records
-app.get('/items', (req, res) => {
-  const query = 'SELECT * FROM items';
-  smoothdb.act(query, [], res);
+// retrieve all users
+app.get('/users', (req, res) => {
+  smoothDb.find('users', res, (result) => {
+    res.status(200).json(result);
+  });
 });
 
-// Retrieve a single record by ID
-app.get('/items/:id', (req, res) => {
-  const query = 'SELECT * FROM items WHERE id = ?';
-  const data = [req.params.id];
-  smoothdb.act(query, data, res);
+// retrieve a single user by ID
+app.get('/users/:id', (req, res) => {
+  smoothDb.findOne('users', req.params.id, res, (result) => {
+    res.status(200).json(result);
+  });
 });
 
-// Create a new record
-app.post('/items', (req, res) => {
-  const query = 'INSERT INTO items (name, description) VALUES (?, ?)';
-  const data = [req.body.name, req.body.description];
-  smoothdb.act(query, data, res);
+// create a new user
+app.post('/users', (req, res) => {
+  smoothDb.insertOne('users', req.body, res, (result) => {
+    res.status(201).json(result);
+  });
 });
 
-// Update an existing record
-app.put('/items/:id', (req, res) => {
-  const query = 'UPDATE items SET name = ?, description = ? WHERE id = ?';
-  const data = [req.body.name, req.body.description, req.params.id];
-  smoothdb.act(query, data, res);
+// update an existing user
+app.put('/users/:id', (req, res) => {
+  smoothDb.updateOne('users', req.params.id, req.body, res, (result) => {
+    res.status(200).json(result);
+  });
 });
 
-// Delete a record
-app.delete('/items/:id', (req, res) => {
-  const query = 'DELETE FROM items WHERE id = ?';
-  const data = [req.params.id];
-  smoothdb.act(query, data, res);
+// delete a user
+app.delete('/users/:id', (req, res) => {
+  smoothDb.deleteOne('users', req.params.id, res, (result) => {
+    res.status(200).json(result);
+  });
 });
 
+
+// Start the server
 app.listen(3000, () => {
-  console.log('Server started on port 3000');
+    console.log('Server started on port 3000');
 });
 ```
+
+## API
+
+Here's a summary of the functions exported by the `smooth-db` module:
+
+- `connection(res)`: A function that establishes a connection to the database and sends a response indicating whether the connection was successful or not.
+
+- `act(query, data, res, callback)`: A generic function that takes a SQL query, data to be inserted/updated, a response object, and an optional callback function. It executes the query and sends an appropriate response based on the result.
+
+- `find(tableName, res, callback)`: A function that selects all rows from a table and sends them in the response.
+
+- `findOne(tableName, id, res, callback)`: A function that selects a single row from a table based on its ID and sends it in the response.
+
+- `insertOne(tableName, data, res, callback)`: A function that inserts a single row into a table and sends a success message in the response.
+
+- `updateOne(tableName, id, data, res, callback)`: A function that updates a single row in a table based on its ID and sends a success message in the response.
+
+- `deleteOne(tableName, id, data, res, callback)`: A function that deletes a single row in a table based on its ID and sends a success message in the response.

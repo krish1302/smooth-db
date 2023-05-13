@@ -44,4 +44,10 @@ const act = (query, data, res, callback) => {
     })
 };
 
-module.exports = { connection, act }
+const find = (tableName, res, callback) => act(`SELECT * FROM ${tableName}`, [], res, callback);
+const findOne = (tableName, id, res, callback) => act(`SELECT * FROM ${tableName} WHERE id=?`, [id], res, callback);
+const insertOne = (tableName, data, res, callback) => act(`INSERT INTO ${tableName} SET ?`, [data], res, callback);
+const updateOne = (tableName, id, data, res, callback) => act(`UPDATE ${tableName} SET ? WHERE id=?`, [data, id], res, callback);
+const deleteOne = (tableName, id, res, callback) => act(`DELETE FROM ${tableName} WHERE id=?`, [id], res, callback);
+
+module.exports = { connection, act, find, findOne, insertOne, updateOne, deleteOne };
